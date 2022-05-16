@@ -71,3 +71,54 @@ func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *a
 	}
 	return status, response, err
 }
+
+func GetRabbitQueue(ch *amqp.Channel, ex string, q string) error {
+	err := ch.ExchangeDeclare(
+		ex,       // name
+		"direct", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		return err
+	}
+	_, err = ch.QueueDeclare(
+		q,     // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key string) (<-chan amqp.Delivery, error) {
+	var err error
+	var msgs <-chan amqp.Delivery
+
+	err = ch.QueueBind(queue, key, exchange, false, nil)
+
+	if err != nil {
+		return nil, TernaryOperator(ch.Close() != nil, err, errors.New("cannot close channel")).(error)
+	}
+	msgs, err = ch.Consume(
+		queue, // queue
+		"",    // consumer
+		true,  // auto ack
+		false, // exclusive
+		false, // no local
+		false, // no wait
+		nil,   // args
+	)
+	if err != nil {
+		return nil, TernaryOperator(ch.Close() != nil, err, errors.New("cannot close channel")).(error)
+	}
+	return msgs, nil
+}

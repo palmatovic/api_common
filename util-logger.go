@@ -16,7 +16,7 @@ func InitLogger(loglevel string) {
 		DisableHTMLEscape: true,
 		DataKey:           "variables",
 		CallerPrettyfier:  nil,
-		PrettyPrint:       false,
+		PrettyPrint:       true,
 	}
 	logrus.SetFormatter(&formatter)
 	logrus.SetReportCaller(true)

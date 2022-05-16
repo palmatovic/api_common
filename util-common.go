@@ -27,6 +27,17 @@ func StringArrayContains(stringArray []string, element string) bool {
 	return false
 }
 
+// IntArrayContains returns true if intArray contains the provided
+// element, false otherwise
+func IntArrayContains(stringArray []int, element int) bool {
+	for _, a := range stringArray {
+		if a == element {
+			return true
+		}
+	}
+	return false
+}
+
 // CountCharTypes returns the number of each char type
 func CountCharTypes(input string) (lower int, upper int, numeric int, special int) {
 	lower, upper, numeric, special = 0, 0, 0, 0

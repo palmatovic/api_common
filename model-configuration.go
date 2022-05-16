@@ -39,6 +39,7 @@ type Application struct {
 	Jwt             Jwt        `yaml:"jwt"`
 	CorsPolicy      CorsPolicy `yaml:"corsPolicy"`
 	MaxFailedLogins int        `yaml:"maxFailedLogins"`
+	Password        Password   `yaml:"password"`
 }
 
 type Infrastructure struct {
@@ -71,6 +72,11 @@ type Api struct {
 	PrivateKeyFilepath string `yaml:"privateKeyFilepath"`
 	AccessToken        Token  `yaml:"accessToken"`
 	RefreshToken       Token  `yaml:"refreshToken"`
+}
+
+type Password struct {
+	PwdDuration int `yaml:"pwdDuration"`
+	PwdWarning  int `yaml:"PwdWarning"`
 }
 
 type Token struct {

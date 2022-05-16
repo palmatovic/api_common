@@ -39,7 +39,7 @@ func PublishMessage(channel *amqp.Channel, exchange string, key string, json []b
 	return nil
 }
 
-func publicToMonitorQueue(jsonResponse []byte, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string) (int, interface{}, error) {
+func PublishToMonitor(jsonResponse []byte, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string) (int, interface{}, error) {
 	base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
 	monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
 		Response:   base64Response,

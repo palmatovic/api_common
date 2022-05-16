@@ -9,9 +9,9 @@ import (
 
 // GetJwtFromContext returns the jwt object, given the fiber context
 func GetJwtFromContext(c *fiber.Ctx) (*jwt.Token, error) {
-	user := c.Locals("user").(*jwt.Token)
-	if user != nil {
-		return user, nil
+	user := c.Locals("user")
+	if user != nil && user.(*jwt.Token) != nil {
+		return user.(*jwt.Token), nil
 	} else {
 		return nil, fmt.Errorf("cannot find jwt in context")
 	}

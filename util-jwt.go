@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jwt "github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 )
 
 // GetJwtFromContext returns the jwt object, given the fiber context
@@ -43,19 +44,85 @@ func RequiresRefreshToken(serviceConfig MicroserviceConfiguration) func(ctx *fib
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
 			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "cannot get jwt from context", err.Error()))
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", err.Error()))
 		}
 		claims := token.Claims.(jwt.MapClaims)
 
 		if len(claims) != len(serviceConfig.Application.Jwt.Api.RefreshToken.Claims) {
 			log.Errorf("invalid token provided")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "invalid token", "invalid token provided"))
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided"))
 		}
 		for i, _ := range claims {
 			if !StringArrayContains(serviceConfig.Application.Jwt.Api.RefreshToken.Claims, i) {
 				log.Errorf("invalid token provided")
-				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "invalid token", "invalid token provided"))
+				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided"))
 			}
+		}
+
+		return ctx.Next()
+	}
+}
+
+func RequiresAccessToken(applicationClaims []string) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		// get userid from jwt
+		token, err := GetJwtFromContext(ctx)
+		if err != nil {
+			log.WithError(err).Panic("cannot get jwt from context")
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", err.Error()))
+		}
+		claims := token.Claims.(jwt.MapClaims)
+
+		if len(claims) != len(applicationClaims) {
+			log.Errorf("invalid token provided")
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided"))
+		}
+		for i, _ := range claims {
+			if !StringArrayContains(applicationClaims, i) {
+				log.Errorf("invalid token provided")
+				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided"))
+			}
+		}
+
+		return ctx.Next()
+	}
+}
+
+func RequiresHierarchy(hierarchies []int) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		// get userid from jwt
+		token, err := GetJwtFromContext(ctx)
+		if err != nil {
+			log.WithError(err).Panic("cannot get jwt from context")
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", err.Error()))
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		jwtHierarchy := int(claims["hierarchy"].(float64))
+		if !IntArrayContains(hierarchies, jwtHierarchy) {
+			log.Errorf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string))
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", API_CODE_COMMON_UNAUTHORIZED))
+		}
+		return ctx.Next()
+	}
+}
+
+func RequiresFirstLogin(isRequired bool) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		// get userid from jwt
+		token, err := GetJwtFromContext(ctx)
+		if err != nil {
+			log.WithError(err).Panic("cannot get jwt from context")
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get jwt from context"))
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		firstLogin, err := strconv.ParseBool(claims["first_login"].(string))
+		if err != nil {
+			log.WithError(err).Panic("cannot get jwt from context")
+			return ctx.Status(500).JSON(GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "requires first login", "cannot convert first_login claim"))
+		}
+		if firstLogin != isRequired {
+			log.Errorf("invalid token provided")
+			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "invalid token provided"))
 		}
 
 		return ctx.Next()

@@ -39,30 +39,34 @@ func PublishMessage(channel *amqp.Channel, exchange string, key string, json []b
 	return nil
 }
 
-func PublishToMonitor(jsonResponse []byte, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string) (int, interface{}, error) {
-	base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
-	monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
-		Response:   base64Response,
-		Uuid:       c.Locals(CTX_REQUESTID).(string),
-		Source:     source,
-		SourceType: sourceType,
-		Success:    TernaryOperator(status != 200, false, true).(bool),
-		Status:     status,
-		Endpoint:   c.OriginalURL(),
-	}}}
-
-	var monitorJson []byte
-	var err error
-	var response interface{}
-	monitorJson, err = json.Marshal(monitorRequest)
+func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string) (int, interface{}, error) {
+	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		status = 500
-		response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "post token", "cannot marshal monitor request")
+		response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request")
 	} else {
-		err = PublishMessage(channel, exchange, key, monitorJson)
+		base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
+		monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
+			Response:   base64Response,
+			Uuid:       c.Locals(CTX_REQUESTID).(string),
+			Source:     source,
+			SourceType: sourceType,
+			Success:    TernaryOperator(status != 200, false, true).(bool),
+			Status:     status,
+			Endpoint:   c.OriginalURL(),
+		}}}
+
+		var monitorJson []byte
+		monitorJson, err = json.Marshal(monitorRequest)
 		if err != nil {
 			status = 500
-			response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "post token", "cannot publish message to monitor queue")
+			response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request")
+		} else {
+			err = PublishMessage(channel, exchange, key, monitorJson)
+			if err != nil {
+				status = 500
+				response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot publish message to monitor queue")
+			}
 		}
 	}
 	return status, response, err

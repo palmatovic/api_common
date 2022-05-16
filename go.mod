@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/gofiber/fiber/v2 v2.33.0
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/gofiber/fiber/v2 v2.14.0
+    github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/streadway/amqp v1.0.0

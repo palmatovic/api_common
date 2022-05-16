@@ -42,33 +42,29 @@ func PublishMessage(channel *amqp.Channel, exchange string, key string, json []b
 func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string) (int, interface{}, error) {
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		status = 500
-		response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request")
-	} else {
-		base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
-		monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
-			Response:   base64Response,
-			Uuid:       c.Locals(CTX_REQUESTID).(string),
-			Source:     source,
-			SourceType: sourceType,
-			Success:    TernaryOperator(status != 200, false, true).(bool),
-			Status:     status,
-			Endpoint:   c.OriginalURL(),
-		}}}
-
-		var monitorJson []byte
-		monitorJson, err = json.Marshal(monitorRequest)
-		if err != nil {
-			status = 500
-			response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request")
-		} else {
-			err = PublishMessage(channel, exchange, key, monitorJson)
-			if err != nil {
-				status = 500
-				response = GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot publish message to monitor queue")
-			}
-		}
+		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
 	}
+	base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
+	monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
+		Response:   base64Response,
+		Uuid:       c.Locals(CTX_REQUESTID).(string),
+		Source:     source,
+		SourceType: sourceType,
+		Success:    TernaryOperator(status != 200, false, true).(bool),
+		Status:     status,
+		Endpoint:   c.OriginalURL(),
+	}}}
+
+	var monitorJson []byte
+	monitorJson, err = json.Marshal(monitorRequest)
+	if err != nil {
+		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
+	}
+	err = PublishMessage(channel, exchange, key, monitorJson)
+	if err != nil {
+		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot publish message to monitor queue"), err
+	}
+
 	return status, response, err
 }
 
@@ -121,4 +117,37 @@ func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key stri
 		return nil, TernaryOperator(ch.Close() != nil, err, errors.New("cannot close channel")).(error)
 	}
 	return msgs, nil
+}
+
+func PublishToErmes(email string, template string, parameters *[]string, exchange string, queue string, key string, userId string, channel *amqp.Channel) (int, interface{}, error) {
+	var status int
+	var response interface{}
+	var err error
+	var jsn []byte
+
+	jsn, err = json.Marshal(ErmesQueue{
+		Data: &ErmesQueueData{
+			Error: nil,
+			ErmesInfo: ErmesInfo{
+				To:         email,
+				Template:   template,
+				Parameters: parameters,
+			},
+			RabbitReply: RabbitReply{
+				Exchange: exchange,
+				Queue:    queue,
+				Key:      key,
+			},
+			UserID: userId,
+		},
+	})
+
+	if err != nil {
+		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "create user", "cannot marshal message for ermes"), err
+	}
+	err = PublishMessage(channel, exchange, key, jsn)
+	if err != nil {
+		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "create user", "cannot publish to ermes"), err
+	}
+	return status, response, err
 }

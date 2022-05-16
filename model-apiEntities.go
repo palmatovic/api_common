@@ -52,3 +52,27 @@ type Notification struct {
 	Message      string   `json:"message,omitempty"`
 	Link         string   `json:"link,omitempty"`
 }
+
+type ErmesQueue struct {
+	Status bool            `json:"status"`
+	Data   *ErmesQueueData `json:"data,omitempty"`
+}
+
+type ErmesQueueData struct {
+	Error       *Error      `json:"error,omitempty"`
+	ErmesInfo   ErmesInfo   `json:"ermes_info,omitempty"`
+	RabbitReply RabbitReply `json:"rabbit_reply,omitempty"`
+	UserID      string      `json:"user_id,omitempty"`
+}
+
+type ErmesInfo struct {
+	To         string    `json:"to,omitempty"`
+	Template   string    `json:"template,omitempty"`
+	Parameters *[]string `json:"parameters,omitempty"`
+}
+
+type RabbitReply struct {
+	Exchange string `json:"exchange,omitempty"`
+	Queue    string `json:"queue,omitempty"`
+	Key      string `json:"key,omitempty"`
+}

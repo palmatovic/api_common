@@ -2,8 +2,6 @@ package api_common
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gofiber/fiber/v2"
 	jwt "github.com/golang-jwt/jwt"
 )
@@ -36,29 +34,4 @@ func GetJwtUserId(c *fiber.Ctx) (string, error) {
 		return "", fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	return userId, nil
-}
-
-func RequiresRefreshToken(serviceConfig MicroserviceConfiguration) func(ctx *fiber.Ctx) error {
-	return func(ctx *fiber.Ctx) error {
-		// get userid from jwt
-		token, err := GetJwtFromContext(ctx)
-		if err != nil {
-			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "cannot get jwt from context", err.Error()))
-		}
-		claims := token.Claims.(jwt.MapClaims)
-
-		if len(claims) != len(serviceConfig.Application.Jwt.Api.RefreshToken.Claims) {
-			log.Errorf("invalid token provided")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "invalid token", "invalid token provided"))
-		}
-		for i, _ := range claims {
-			if !StringArrayContains(serviceConfig.Application.Jwt.Api.RefreshToken.Claims, i) {
-				log.Errorf("invalid token provided")
-				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "invalid token", "invalid token provided"))
-			}
-		}
-
-		return ctx.Next()
-	}
 }

@@ -2,10 +2,9 @@ package api_common
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt"
+	jwt "github.com/golang-jwt/jwt"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetJwtFromContext returns the jwt object, given the fiber context

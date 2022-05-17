@@ -45,11 +45,11 @@ type Monitor struct {
 }
 
 type Notification struct {
-	NotifyID     string   `json:"notify_id,omitempty"`
 	UserID       []string `json:"user_id,omitempty"`
 	NotifyTypeID string   `json:"notify_type_id,omitempty"`
-	SourceType   string   `json:"source_type,omitempty"`
+	Source       string   `json:"source,omitempty"`
 	Message      string   `json:"message,omitempty"`
+	SourceType   string   `json:"source_type,omitempty"`
 	Link         string   `json:"link,omitempty"`
 }
 

@@ -138,7 +138,7 @@ func PublishToErmes(email string, template string, parameters *[]string, exchang
 				Queue:    queue,
 				Key:      key,
 			},
-			UserID: userId,
+			UserID: &userId,
 		},
 	})
 

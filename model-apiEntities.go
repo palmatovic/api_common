@@ -50,7 +50,7 @@ type Notification struct {
 	Source       string   `json:"source,omitempty"`
 	Message      string   `json:"message,omitempty"`
 	SourceType   string   `json:"source_type,omitempty"`
-	Link         string   `json:"link,omitempty"`
+	Link         *string  `json:"link,omitempty"`
 }
 
 type ErmesQueue struct {
@@ -62,7 +62,7 @@ type ErmesQueueData struct {
 	Error       *Error      `json:"error,omitempty"`
 	ErmesInfo   ErmesInfo   `json:"ermes_info,omitempty"`
 	RabbitReply RabbitReply `json:"rabbit_reply,omitempty"`
-	UserID      string      `json:"user_id,omitempty"`
+	UserID      *string     `json:"user_id,omitempty"`
 }
 
 type ErmesInfo struct {

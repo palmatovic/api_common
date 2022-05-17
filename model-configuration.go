@@ -40,6 +40,12 @@ type Application struct {
 	CorsPolicy      CorsPolicy `yaml:"corsPolicy"`
 	MaxFailedLogins int        `yaml:"maxFailedLogins"`
 	Password        Password   `yaml:"password"`
+	Template        Template   `yaml:"template"`
+}
+
+type Template struct {
+	AfterCreation       string `yaml:"afterCreation"`
+	AfterForgotPassword string `yaml:"afterForgotPassword"`
 }
 
 type Infrastructure struct {

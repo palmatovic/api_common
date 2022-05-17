@@ -1,7 +1,6 @@
 package api_common
 
 type MicroserviceConfiguration struct {
-	MicroService   MicroService   `yaml:"microservice"`
 	Infrastructure Infrastructure `yaml:"infrastructure"`
 	Application    Application    `yaml:"application"`
 }

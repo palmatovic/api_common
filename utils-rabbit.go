@@ -44,15 +44,27 @@ func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *a
 	if err != nil {
 		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
 	}
+	var uuidStr, urlStr string
+	if uuid == nil {
+		uuidStr = ""
+	} else {
+		uuidStr = *uuid
+	}
+	if url == nil {
+		urlStr = ""
+	} else {
+		urlStr = *url
+	}
+
 	base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
 	monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
 		Response:   base64Response,
-		Uuid:       TernaryOperator(c != nil, c.Locals(CTX_REQUESTID).(string), *uuid).(string),
+		Uuid:       TernaryOperator(c != nil, c.Locals(CTX_REQUESTID).(string), uuidStr).(string),
 		Source:     source,
 		SourceType: sourceType,
 		Success:    TernaryOperator(status != 200, false, true).(bool),
 		Status:     status,
-		Endpoint:   TernaryOperator(c != nil, c.OriginalURL(), *url).(string),
+		Endpoint:   TernaryOperator(c != nil, c.OriginalURL(), urlStr).(string),
 	}}}
 
 	var monitorJson []byte

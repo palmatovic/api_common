@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jwt "github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 	"strconv"
 )
 
@@ -38,49 +39,91 @@ func GetJwtUserId(c *fiber.Ctx) (string, error) {
 	return userId, nil
 }
 
-func RequiresRefreshToken(serviceConfig MicroserviceConfiguration) func(ctx *fiber.Ctx) error {
+func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp.Channel) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		// get userid from jwt
+		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
 			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", err.Error()))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", err.Error())
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 
 		if len(claims) != len(serviceConfig.Application.Jwt.Api.RefreshToken.Claims) {
 			log.Errorf("invalid token provided")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided"))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		for i, _ := range claims {
 			if !StringArrayContains(serviceConfig.Application.Jwt.Api.RefreshToken.Claims, i) {
 				log.Errorf("invalid token provided")
-				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided"))
+				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
+				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+				if err != nil {
+					log.WithError(err).Errorf("cannot send message to monitor")
+				} else {
+					log.Infof("successfully sent message to monitor")
+				}
+				return ctx.Status(401).JSON(response)
 			}
 		}
-
 		return ctx.Next()
 	}
 }
 
-func RequiresAccessToken(applicationClaims []string) func(ctx *fiber.Ctx) error {
+func RequiresAccessToken(applicationClaims []string, channel *amqp.Channel, serviceConfig MicroserviceConfiguration) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
-		// get userid from jwt
+		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
 			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", err.Error()))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", err.Error())
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 
 		if len(claims) != len(applicationClaims) {
 			log.Errorf("invalid token provided")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided"))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		for i, _ := range claims {
 			if !StringArrayContains(applicationClaims, i) {
 				log.Errorf("invalid token provided")
-				return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided"))
+				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
+				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+				if err != nil {
+					log.WithError(err).Errorf("cannot send message to monitor")
+				} else {
+					log.Infof("successfully sent message to monitor")
+				}
+				return ctx.Status(401).JSON(response)
 			}
 		}
 
@@ -88,41 +131,77 @@ func RequiresAccessToken(applicationClaims []string) func(ctx *fiber.Ctx) error 
 	}
 }
 
-func RequiresHierarchy(hierarchies []int) func(ctx *fiber.Ctx) error {
+func RequiresHierarchy(hierarchies []int, channel *amqp.Channel, serviceConfig MicroserviceConfiguration) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
-		// get userid from jwt
+		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
 			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", err.Error()))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", err.Error())
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		jwtHierarchy := int(claims["hierarchy"].(float64))
 		if !IntArrayContains(hierarchies, jwtHierarchy) {
 			log.Errorf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string))
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", API_CODE_COMMON_UNAUTHORIZED))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", fmt.Sprintf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string)))
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		return ctx.Next()
 	}
 }
 
-func RequiresFirstLogin(isRequired bool) func(ctx *fiber.Ctx) error {
+func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig MicroserviceConfiguration) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
-		// get userid from jwt
+		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
 			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get jwt from context"))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get jwt from context")
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
-		firstLogin, err := strconv.ParseBool(claims["first_login"].(string))
+		var firstLogin bool
+		firstLogin, err = strconv.ParseBool(claims["first_login"].(string))
 		if err != nil {
-			log.WithError(err).Panic("cannot get jwt from context")
-			return ctx.Status(500).JSON(GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "requires first login", "cannot convert first_login claim"))
+			log.WithError(err).Panic("cannot get first_login claim")
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get first_login claim")
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 		if firstLogin != isRequired {
 			log.Errorf("invalid token provided")
-			return ctx.Status(401).JSON(GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "invalid token provided"))
+			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "invalid token provided")
+			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, "auth", "rest", nil, nil)
+			if err != nil {
+				log.WithError(err).Errorf("cannot send message to monitor")
+			} else {
+				log.Infof("successfully sent message to monitor")
+			}
+			return ctx.Status(401).JSON(response)
 		}
 
 		return ctx.Next()

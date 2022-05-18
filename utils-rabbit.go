@@ -131,8 +131,7 @@ func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key stri
 	return msgs, nil
 }
 
-func PublishToErmes(response interface{}, email string, template string, parameters *[]string, exchange string, queue string, key string, userId string, channel *amqp.Channel) (int, interface{}, error) {
-	var status int
+func PublishToErmes(response interface{}, status int, email string, template string, parameters *[]string, exchange string, queue string, key string, userId string, channel *amqp.Channel) (int, interface{}, error) {
 	var err error
 	var jsn []byte
 

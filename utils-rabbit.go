@@ -44,27 +44,29 @@ func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *a
 	if err != nil {
 		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
 	}
+
 	var uuidStr, urlStr string
-	if uuid == nil {
-		uuidStr = ""
-	} else {
+	if c == nil {
 		uuidStr = *uuid
-	}
-	if url == nil {
-		urlStr = ""
-	} else {
 		urlStr = *url
+	} else {
+		if url == nil {
+			urlStr = c.OriginalURL()
+		} else {
+			urlStr = *url
+		}
+		uuidStr = c.Locals(CTX_REQUESTID).(string)
 	}
 
 	base64Response := base64.URLEncoding.EncodeToString(jsonResponse)
 	monitorRequest := MonitorRequest{Data: MonitorData{Monitor: Monitor{
 		Response:   base64Response,
-		Uuid:       TernaryOperator(c != nil, c.Locals(CTX_REQUESTID).(string), uuidStr).(string),
+		Uuid:       uuidStr,
 		Source:     source,
 		SourceType: sourceType,
 		Success:    TernaryOperator(status != 200, false, true).(bool),
 		Status:     status,
-		Endpoint:   TernaryOperator(c != nil, c.OriginalURL(), urlStr).(string),
+		Endpoint:   urlStr,
 	}}}
 
 	var monitorJson []byte
@@ -136,6 +138,7 @@ func PublishToErmes(response interface{}, status int, email string, template str
 	var jsn []byte
 
 	jsn, err = json.Marshal(ErmesQueue{
+		Status: nil,
 		Data: &ErmesQueueData{
 			Error: nil,
 			ErmesInfo: ErmesInfo{

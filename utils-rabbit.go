@@ -131,7 +131,7 @@ func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key stri
 	return msgs, nil
 }
 
-func PublishToErmes(response interface{}, status int, email string, template string, parameters *[]string, exchange string, queue string, key string, userId string, channel *amqp.Channel) (int, interface{}, error) {
+func PublishToErmes(response interface{}, status int, email string, template string, parameters *[]string, callerExchange string, callerQueue string, callerKey string, ermesExchange string, ermesQueue string, ermesKey string, userId string, channel *amqp.Channel) (int, interface{}, error) {
 	var err error
 	var jsn []byte
 
@@ -144,9 +144,9 @@ func PublishToErmes(response interface{}, status int, email string, template str
 				Parameters: parameters,
 			},
 			RabbitReply: RabbitReply{
-				Exchange: exchange,
-				Queue:    queue,
-				Key:      key,
+				Exchange: callerExchange,
+				Queue:    callerQueue,
+				Key:      callerKey,
 			},
 			UserID: &userId,
 		},
@@ -155,7 +155,7 @@ func PublishToErmes(response interface{}, status int, email string, template str
 	if err != nil {
 		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "create user", "cannot marshal message for ermes"), err
 	}
-	err = PublishMessage(channel, exchange, key, jsn)
+	err = PublishMessage(channel, ermesExchange, ermesKey, jsn)
 	if err != nil {
 		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "create user", "cannot publish to ermes"), err
 	}

@@ -2,7 +2,6 @@ package api_common
 
 import (
 	"github.com/gofiber/fiber/v2"
-	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"regexp"
 	"strconv"
@@ -94,9 +93,9 @@ func Response(c *fiber.Ctx, response interface{}, status int, channel *amqp.Chan
 	var err error
 	status, response, err = PublishToMonitor(response, c, status, channel, exchange, key, source, "rest", nil, nil)
 	if err != nil {
-		log.WithFields(log.Fields{"uuid": c.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor queue")
+		Elog(c).WithError(err).Errorf("cannot send message to monitor queue")
 	} else {
-		log.WithFields(log.Fields{"uuid": c.Locals(CTX_REQUESTID).(string)}).Infof("sent message to monitor queue")
+		Elog(c).Infof("sent message to monitor queue")
 	}
 	return c.Status(status).JSON(response)
 }

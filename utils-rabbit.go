@@ -82,7 +82,7 @@ func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *a
 	return status, response, err
 }
 
-func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key string) (<-chan amqp.Delivery, error) {
+func GetRabbitConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, error) {
 	var err error
 	var msgs <-chan amqp.Delivery
 
@@ -101,7 +101,7 @@ func GetRabbitConsumer(ch *amqp.Channel, exchange string, queue string, key stri
 	return msgs, nil
 }
 
-func PublishToErmes(response interface{}, status int, email string, template string, parameters *[]string, callerExchange string, callerQueue string, callerKey string, ermesExchange string, ermesQueue string, ermesKey string, userId string, channel *amqp.Channel) (int, interface{}, error) {
+func PublishToErmes(response interface{}, status int, email string, template string, parameters *[]string, callerExchange string, callerQueue string, callerKey string, ermesExchange string, ermesKey string, userId string, channel *amqp.Channel) (int, interface{}, error) {
 	var err error
 	var jsn []byte
 

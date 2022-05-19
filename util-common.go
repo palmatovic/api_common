@@ -80,3 +80,10 @@ func GetErrorResponse(code string, reason string, detail string) interface{} {
 		}},
 	}
 }
+
+func GetSuccessResponse(data interface{}) interface{} {
+	return fiber.Map{
+		"status": true,
+		"data":   data,
+	}
+}

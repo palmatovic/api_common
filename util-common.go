@@ -90,13 +90,13 @@ func GetSuccessResponse(data interface{}) interface{} {
 	}
 }
 
-func Response(c *fiber.Ctx, response interface{}, status int, channel *amqp.Channel, exchange string, key string) error {
+func Response(c *fiber.Ctx, response interface{}, status int, channel *amqp.Channel, exchange string, key string, source string) error {
 	var err error
-	status, response, err = PublishToMonitor(response, c, status, channel, exchange, key, "user-management", "rest", nil, nil)
+	status, response, err = PublishToMonitor(response, c, status, channel, exchange, key, source, "rest", nil, nil)
 	if err != nil {
-		log.WithError(err).Errorf("cannot send message to monitor queue")
+		log.WithFields(log.Fields{"uuid": c.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor queue")
 	} else {
-		log.Infof("sent message to monitor queue")
+		log.WithFields(log.Fields{"uuid": c.Locals(CTX_REQUESTID).(string)}).Infof("sent message to monitor queue")
 	}
 	return c.Status(status).JSON(response)
 }

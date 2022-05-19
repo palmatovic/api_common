@@ -9,6 +9,18 @@ import (
 	"strconv"
 )
 
+// elog add extra info on every log
+func elog(c *fiber.Ctx) *log.Entry {
+	actor, _ := GetJwtUserId(c)
+	ips := append([]string{c.IP()}, c.IPs()...)
+	reqId := c.Locals(CTX_REQUESTID).(string)
+	return log.WithFields(log.Fields{
+		"actor": actor,
+		"ips":   ips,
+		"uuid":  reqId,
+	})
+}
+
 // GetJwtFromContext returns the jwt object, given the fiber context
 func GetJwtFromContext(c *fiber.Ctx) (*jwt.Token, error) {
 	user := c.Locals("user")
@@ -45,38 +57,38 @@ func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp
 		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Panic("cannot get jwt from context")
+			elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", err.Error())
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 
 		if len(claims) != len(serviceConfig.Application.Jwt.Api.RefreshToken.Claims) {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("invalid token provided")
+			elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		for i, _ := range claims {
 			if !StringArrayContains(serviceConfig.Application.Jwt.Api.RefreshToken.Claims, i) {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("invalid token provided")
+				elog(ctx).Errorf("invalid token provided")
 				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
 				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 				if err != nil {
-					log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+					elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 				} else {
-					log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+					elog(ctx).Infof("successfully sent message to monitor")
 				}
 				return ctx.Status(401).JSON(response)
 			}
@@ -90,38 +102,38 @@ func RequiresAccessToken(applicationClaims []string, channel *amqp.Channel, serv
 		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Panic("cannot get jwt from context")
+			elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", err.Error())
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 
 		if len(claims) != len(applicationClaims) {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("invalid token provided")
+			elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		for i, _ := range claims {
 			if !StringArrayContains(applicationClaims, i) {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("invalid token provided")
+				elog(ctx).Errorf("invalid token provided")
 				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
 				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 				if err != nil {
-					log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+					elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 				} else {
-					log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+					elog(ctx).Infof("successfully sent message to monitor")
 				}
 				return ctx.Status(401).JSON(response)
 			}
@@ -136,26 +148,26 @@ func RequiresHierarchy(hierarchies []int, channel *amqp.Channel, serviceConfig M
 		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Panic("cannot get jwt from context")
+			elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", err.Error())
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		jwtHierarchy := int(claims["hierarchy"].(float64))
 		if !IntArrayContains(hierarchies, jwtHierarchy) {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string))
+			elog(ctx).Errorf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string))
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", fmt.Sprintf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string)))
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
@@ -168,13 +180,13 @@ func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig Mi
 		var response interface{}
 		token, err := GetJwtFromContext(ctx)
 		if err != nil {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Panic("cannot get jwt from context")
+			elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get jwt from context")
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
@@ -182,24 +194,24 @@ func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig Mi
 		var firstLogin bool
 		firstLogin, err = strconv.ParseBool(claims["first_login"].(string))
 		if err != nil {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Panic("cannot get first_login claim")
+			elog(ctx).WithError(err).Panic("cannot get first_login claim")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get first_login claim")
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}
 		if firstLogin != isRequired {
-			log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Errorf("invalid token provided")
+			elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "invalid token provided")
 			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).WithError(err).Errorf("cannot send message to monitor")
+				elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
-				log.WithFields(log.Fields{"uuid": ctx.Locals(CTX_REQUESTID).(string)}).Infof("successfully sent message to monitor")
+				elog(ctx).Infof("successfully sent message to monitor")
 			}
 			return ctx.Status(401).JSON(response)
 		}

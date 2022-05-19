@@ -2,6 +2,8 @@ package api_common
 
 import (
 	"github.com/gofiber/fiber/v2"
+	log "github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 	"regexp"
 	"strconv"
 )
@@ -86,4 +88,15 @@ func GetSuccessResponse(data interface{}) interface{} {
 		"status": true,
 		"data":   data,
 	}
+}
+
+func Response(c *fiber.Ctx, response interface{}, status int, channel *amqp.Channel, exchange string, key string) error {
+	var err error
+	status, response, err = PublishToMonitor(response, c, status, channel, exchange, key, "user-management", "rest", nil, nil)
+	if err != nil {
+		log.WithError(err).Errorf("cannot send message to monitor queue")
+	} else {
+		log.Infof("sent message to monitor queue")
+	}
+	return c.Status(status).JSON(response)
 }

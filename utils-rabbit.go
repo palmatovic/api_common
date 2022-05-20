@@ -106,7 +106,6 @@ func PublishToErmes(response interface{}, status int, email string, template str
 	var jsn []byte
 
 	jsn, err = json.Marshal(ErmesQueue{
-		Status: nil,
 		Data: &ErmesQueueData{
 			Error: nil,
 			ErmesInfo: ErmesInfo{

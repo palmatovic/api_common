@@ -54,7 +54,7 @@ type Notification struct {
 }
 
 type ErmesQueue struct {
-	Status *bool           `json:"status,omitempty"`
+	Status bool            `json:"status,omitempty"`
 	Data   *ErmesQueueData `json:"data,omitempty"`
 }
 

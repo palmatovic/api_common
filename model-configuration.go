@@ -41,6 +41,12 @@ type Application struct {
 	MaxFailedLogins int        `yaml:"maxFailedLogins"`
 	Password        Password   `yaml:"password"`
 	Template        Template   `yaml:"template"`
+	Config          Config     `yaml:"config"`
+}
+
+type Config struct {
+	Import string `yaml:"import"`
+	Update string `yaml:"update"`
 }
 
 type Template struct {

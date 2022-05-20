@@ -59,7 +59,7 @@ func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp
 		if err != nil {
 			Elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", err.Error())
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -72,7 +72,7 @@ func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp
 		if len(claims) != len(serviceConfig.Application.Jwt.Api.RefreshToken.Claims) {
 			Elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -84,7 +84,7 @@ func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp
 			if !StringArrayContains(serviceConfig.Application.Jwt.Api.RefreshToken.Claims, i) {
 				Elog(ctx).Errorf("invalid token provided")
 				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires refresh token", "invalid token provided")
-				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+				err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 				if err != nil {
 					Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 				} else {
@@ -104,7 +104,7 @@ func RequiresAccessToken(applicationClaims []string, channel *amqp.Channel, serv
 		if err != nil {
 			Elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", err.Error())
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -117,7 +117,7 @@ func RequiresAccessToken(applicationClaims []string, channel *amqp.Channel, serv
 		if len(claims) != len(applicationClaims) {
 			Elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -129,7 +129,7 @@ func RequiresAccessToken(applicationClaims []string, channel *amqp.Channel, serv
 			if !StringArrayContains(applicationClaims, i) {
 				Elog(ctx).Errorf("invalid token provided")
 				response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires access token", "invalid token provided")
-				_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+				err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 				if err != nil {
 					Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 				} else {
@@ -150,7 +150,7 @@ func RequiresHierarchy(hierarchies []int, channel *amqp.Channel, serviceConfig M
 		if err != nil {
 			Elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", err.Error())
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -163,7 +163,7 @@ func RequiresHierarchy(hierarchies []int, channel *amqp.Channel, serviceConfig M
 		if !IntArrayContains(hierarchies, jwtHierarchy) {
 			Elog(ctx).Errorf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string))
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires hierarchy", fmt.Sprintf("Unauthorized user hierarchy: %d, with role %s", jwtHierarchy, claims["role"].(string)))
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -182,7 +182,7 @@ func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig Mi
 		if err != nil {
 			Elog(ctx).WithError(err).Panic("cannot get jwt from context")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get jwt from context")
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -196,7 +196,7 @@ func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig Mi
 		if err != nil {
 			Elog(ctx).WithError(err).Panic("cannot get first_login claim")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "cannot get first_login claim")
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {
@@ -207,7 +207,7 @@ func RequiresFirstLogin(isRequired bool, channel *amqp.Channel, serviceConfig Mi
 		if firstLogin != isRequired {
 			Elog(ctx).Errorf("invalid token provided")
 			response = GetErrorResponse(API_CODE_COMMON_UNAUTHORIZED, "requires first login", "invalid token provided")
-			_, _, err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
+			err = PublishToMonitor(response, ctx, 401, channel, serviceConfig.Infrastructure.Rabbit.Monitor.Exchange, serviceConfig.Infrastructure.Rabbit.Monitor.Key, source, "rest", nil, nil)
 			if err != nil {
 				Elog(ctx).WithError(err).Errorf("cannot send message to monitor")
 			} else {

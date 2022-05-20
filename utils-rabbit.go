@@ -39,10 +39,10 @@ func PublishMessage(channel *amqp.Channel, exchange string, key string, json []b
 	return nil
 }
 
-func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string, uuid *string, url *string) (int, interface{}, error) {
+func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *amqp.Channel, exchange string, key string, source string, sourceType string, uuid *string, url *string) error {
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
+		return err
 	}
 
 	var uuidStr, urlStr string
@@ -72,14 +72,13 @@ func PublishToMonitor(response interface{}, c *fiber.Ctx, status int, channel *a
 	var monitorJson []byte
 	monitorJson, err = json.Marshal(monitorRequest)
 	if err != nil {
-		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot marshal monitor request"), err
+		return err
 	}
 	err = PublishMessage(channel, exchange, key, monitorJson)
 	if err != nil {
-		return 500, GetErrorResponse(API_CODE_COMMON_INTERNAL_SERVER_ERROR, "api_common", "cannot publish message to monitor queue"), err
+		return err
 	}
-
-	return status, response, err
+	return err
 }
 
 func GetRabbitConsumer(ch *amqp.Channel, queue string) (<-chan amqp.Delivery, error) {

@@ -91,7 +91,7 @@ func GetSuccessResponse(data interface{}) interface{} {
 
 func Response(c *fiber.Ctx, response interface{}, status int, channel *amqp.Channel, exchange string, key string, source string) error {
 	var err error
-	_, _, err = PublishToMonitor(response, c, status, channel, exchange, key, source, "rest", nil, nil)
+	err = PublishToMonitor(response, c, status, channel, exchange, key, source, "rest", nil, nil)
 	if err != nil {
 		Elog(c).WithError(err).Errorf("cannot send message to monitor queue")
 	} else {

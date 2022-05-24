@@ -11,13 +11,16 @@ import (
 
 // Elog add extra info on every log
 func Elog(c *fiber.Ctx) *log.Entry {
-	actor, _ := GetJwtUserId(c)
+	actor, org, role, hierarchy, _ := GetJwtUser(c)
 	ips := append([]string{c.IP()}, c.IPs()...)
 	reqId := c.Locals(CTX_REQUESTID).(string)
 	return log.WithFields(log.Fields{
-		"actor": actor,
-		"ips":   ips,
-		"uuid":  reqId,
+		"actor":     actor,
+		"org":       org,
+		"role":      role,
+		"hierarchy": hierarchy,
+		"ips":       ips,
+		"uuid":      reqId,
 	})
 }
 
@@ -31,24 +34,45 @@ func GetJwtFromContext(c *fiber.Ctx) (*jwt.Token, error) {
 	}
 }
 
-// GetJwtUserId returns the userid in the jwt, given the fiber context
-func GetJwtUserId(c *fiber.Ctx) (string, error) {
+// GetJwtUser returns the userid in the jwt, given the fiber context
+func GetJwtUser(c *fiber.Ctx) (string, string, string, string, error) {
 	userJwt, errGetJwtFromContext := GetJwtFromContext(c)
 	if errGetJwtFromContext != nil {
-		return "", fmt.Errorf("cannot find jwt in context")
+		return "", "", "", "", fmt.Errorf("cannot find jwt in context")
 	}
 	userClaims := userJwt.Claims.(jwt.MapClaims)
 	if userClaims == nil {
-		return "", fmt.Errorf("malformed jwt, cannot find any claims")
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find any claims")
 	}
 	if userClaims["sub"] == nil {
-		return "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	userId := userClaims["sub"].(string)
 	if userId == "" {
-		return "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
-	return userId, nil
+	if userClaims["org"] == nil {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	org := userClaims["org"].(string)
+	if org == "" {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	if userClaims["role"] == nil {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	role := userClaims["role"].(string)
+	if role == "" {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	if userClaims["hierarchy"] == nil {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	hierarchy := userClaims["hierarchy"].(string)
+	if hierarchy == "" {
+		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+	}
+	return userId, org, role, hierarchy, nil
 }
 
 func RequiresRefreshToken(serviceConfig MicroserviceConfiguration, channel *amqp.Channel, source string) func(ctx *fiber.Ctx) error {

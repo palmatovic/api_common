@@ -88,7 +88,7 @@ type Api struct {
 
 type Password struct {
 	PwdDuration int `yaml:"pwdDuration"`
-	PwdWarning  int `yaml:"PwdWarning"`
+	PwdWarning  int `yaml:"pwdWarning"`
 }
 
 type Token struct {

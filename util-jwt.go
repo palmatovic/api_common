@@ -35,43 +35,40 @@ func GetJwtFromContext(c *fiber.Ctx) (*jwt.Token, error) {
 }
 
 // GetJwtUser returns the userid in the jwt, given the fiber context
-func GetJwtUser(c *fiber.Ctx) (string, string, string, string, error) {
+func GetJwtUser(c *fiber.Ctx) (string, string, string, int, error) {
 	userJwt, errGetJwtFromContext := GetJwtFromContext(c)
 	if errGetJwtFromContext != nil {
-		return "", "", "", "", fmt.Errorf("cannot find jwt in context")
+		return "", "", "", -1, fmt.Errorf("cannot find jwt in context")
 	}
 	userClaims := userJwt.Claims.(jwt.MapClaims)
 	if userClaims == nil {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find any claims")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find any claims")
 	}
 	if userClaims["sub"] == nil {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	userId := userClaims["sub"].(string)
 	if userId == "" {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	if userClaims["org"] == nil {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	org := userClaims["org"].(string)
 	if org == "" {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	if userClaims["role"] == nil {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	role := userClaims["role"].(string)
 	if role == "" {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
 	if userClaims["hierarchy"] == nil {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
+		return "", "", "", -1, fmt.Errorf("malformed jwt, cannot find sub claim")
 	}
-	hierarchy := userClaims["hierarchy"].(string)
-	if hierarchy == "" {
-		return "", "", "", "", fmt.Errorf("malformed jwt, cannot find sub claim")
-	}
+	hierarchy := int(userClaims["hierarchy"].(float64))
 	return userId, org, role, hierarchy, nil
 }
 
